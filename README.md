@@ -76,7 +76,7 @@
 
 ### 安装 / Install
 ```bash
-git clone https://github.com/<your-username>/revival.git
+git clone https://github.com/paddlefeng/Revival.git
 cd revival
 npm install
 ```
