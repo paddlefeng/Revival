@@ -1,0 +1,574 @@
+/**
+ * ==============================================================
+ * editor-layout.css — Revival 响应式编辑器布局系统
+ * 
+ * 覆盖 4 种模板 × 3 种断点
+ * 配合 useResponsive() hook 使用
+ * ==============================================================
+ */
+
+/* ==============================================================
+ * CSS 自定义属性（设计令牌）
+ * ============================================================== */
+:root {
+  --panel-desktop-width: 560px;
+  --panel-tablet-width: 320px;
+  --panel-mobile-max-height: 45vh;
+
+  --titlebar-height: 56px;
+  --touch-target-min: 44px;
+  --touch-target-min-mobile: 48px;
+  --slider-touch-height: 32px;
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  --drawer-handle-width: 40px;
+  --drawer-handle-height: 4px;
+  --drawer-radius: 20px;
+  --drawer-transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --color-panel-bg: rgba(11, 18, 32, 0.97);
+  --color-drawer-bg: rgba(11, 18, 32, 0.97);
+  --color-border: rgba(255, 255, 255, 0.1);
+}
+
+/* ==============================================================
+ * 1. 全局布局容器
+ * ============================================================== */
+.editor-shell {
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+}
+
+.editor-inner {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.editor-body {
+  flex: 1;
+  overflow: hidden;
+  display: grid;
+  height: 100%;
+}
+
+/* ==============================================================
+ * 2. 预览区域
+ * ============================================================== */
+.editor-preview-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  min-height: 0;
+}
+
+.editor-preview-area .preview-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==============================================================
+ * 3. 控制面板
+ * ============================================================== */
+.editor-control-panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* ==============================================================
+ * 4. 断点适配 - 桌面端 (>= 1024px)
+ * ============================================================== */
+@media (min-width: 1024px) {
+  .editor-body {
+    grid-template-columns: 1fr var(--panel-desktop-width);
+  }
+
+  /* 模板 1: 光影边框 - 宽面板 */
+  .editor-body.wide-panel {
+    grid-template-columns: 1fr 560px;
+  }
+
+  /* 模板 2: 哈苏风 - 左侧参数 + 右侧照片 */
+  .editor-body.hasselblad-layout {
+    grid-template-columns: 160px 1fr;
+    direction: rtl; /* 视觉上参数在左，照片在右 */
+  }
+  .editor-body.hasselblad-layout > * {
+    direction: ltr;
+  }
+  .editor-body.hasselblad-layout .editor-control-panel {
+    border-right: 1px solid var(--color-border);
+    border-left: none;
+  }
+
+  /* 模板 3: 小米风 - 全屏预览 + 右侧窄面板 */
+  .editor-body.xiaomi-layout {
+    grid-template-columns: 1fr 420px;
+  }
+
+  /* 模板 4: 卡片式参数 - 类光影边框布局 */
+  .editor-body.cardparams-layout {
+    grid-template-columns: 1fr 560px;
+  }
+
+  .editor-control-panel {
+    border-left: 1px solid var(--color-border);
+    padding: 24px;
+  }
+
+  .editor-preview-area {
+    padding: 24px;
+  }
+}
+
+/* ==============================================================
+ * 5. 断点适配 - 平板端 (640px - 1023px)
+ * ============================================================== */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .editor-body {
+    grid-template-columns: 1fr var(--panel-tablet-width);
+  }
+
+  .editor-body.wide-panel {
+    grid-template-columns: 1fr 380px;
+  }
+
+  .editor-body.hasselblad-layout {
+    grid-template-columns: 100px 1fr;
+    direction: rtl;
+  }
+  .editor-body.hasselblad-layout > * {
+    direction: ltr;
+  }
+  .editor-body.hasselblad-layout .editor-control-panel {
+    border-right: 1px solid var(--color-border);
+    border-left: none;
+  }
+
+  .editor-body.xiaomi-layout {
+    grid-template-columns: 1fr 300px;
+  }
+
+  .editor-body.cardparams-layout {
+    grid-template-columns: 1fr 380px;
+  }
+
+  .editor-control-panel {
+    border-left: 1px solid var(--color-border);
+    padding: 16px;
+  }
+
+  .editor-preview-area {
+    padding: 16px;
+  }
+
+  /* 折叠面板在平板上默认收拢 */
+  .editor-control-panel .collapse-section {
+    --collapse-default-open: false;
+  }
+
+  /* 更大的触摸目标 - 平板 */
+  .editor-control-panel button,
+  .editor-control-panel label,
+  .editor-control-panel select,
+  .editor-control-panel input[type="text"],
+  .editor-control-panel textarea {
+    min-height: var(--touch-target-min);
+  }
+
+  .editor-control-panel input[type="range"] {
+    height: var(--slider-touch-height);
+  }
+}
+
+/* ==============================================================
+ * 6. 断点适配 - 手机端 (< 640px)
+ * ============================================================== */
+@media (max-width: 639px) {
+  .editor-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    position: relative;
+  }
+
+  .editor-preview-area {
+    min-height: 50vh;
+    padding: 12px;
+  }
+
+  .editor-control-panel {
+    display: none; /* 桌面/平板面板隐藏，使用底部抽屉代替 */
+  }
+
+  /* 导出按钮固定在预览区底部 */
+  .editor-preview-area .mobile-export-fab {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+    z-index: 10;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* 手机端滑块专用触摸优化 */
+  input[type="range"] {
+    height: var(--slider-touch-height);
+  }
+
+  /* 所有表单控件 48px 最小高度 */
+  button, label, select, input, textarea, .touch-target {
+    min-height: var(--touch-target-min-mobile);
+  }
+
+  /* 安全区域适配 */
+  .safe-area-padding {
+    padding-bottom: var(--safe-bottom);
+  }
+}
+
+/* ==============================================================
+ * 7. 手机端底部抽屉面板
+ * ============================================================== */
+.mobile-params-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none; /* 让点击穿透到背景，除了抽屉本身 */
+}
+
+.mobile-params-drawer .drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity var(--drawer-transition);
+  pointer-events: none;
+}
+
+.mobile-params-drawer.active .drawer-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobile-params-drawer .drawer-surface {
+  pointer-events: auto;
+  background: var(--color-drawer-bg);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border-top-left-radius: var(--drawer-radius);
+  border-top-right-radius: var(--drawer-radius);
+  max-height: 65vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--drawer-transition);
+  will-change: transform;
+  /* 默认完全隐藏（滑出屏幕） */
+  transform: translateY(100%);
+}
+
+.mobile-params-drawer.active .drawer-surface {
+  transform: translateY(0);
+}
+
+/* 拖拽手柄区域 */
+.drawer-handle-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  cursor: grab;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.drawer-handle-area:active {
+  cursor: grabbing;
+}
+
+.drawer-handle-indicator {
+  width: var(--drawer-handle-width);
+  height: var(--drawer-handle-height);
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.drawer-handle-area:hover .drawer-handle-indicator {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* 抽屉头部（标题 + 操作按钮） */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 20px 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.drawer-header .drawer-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.drawer-header .drawer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.drawer-header .drawer-action-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.drawer-header .drawer-action-btn.primary {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: rgba(6, 182, 212, 0.3);
+  color: #67e8f9;
+}
+
+.drawer-header .drawer-action-btn:active {
+  transform: scale(0.96);
+}
+
+/* 抽屉内可滚动内容 */
+.drawer-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drawer-scroll-content .safe-bottom-padding {
+  padding-bottom: calc(16px + var(--safe-bottom));
+}
+
+/* 抽屉内 Collapse 组件的触摸优化 */
+.drawer-scroll-content .collapse-section button {
+  min-height: 48px;
+}
+
+/* 抽屉展开状态：预览区缩小给抽屉让位 */
+@media (max-width: 639px) {
+  .mobile-params-drawer.active ~ .editor-body .editor-preview-area {
+    transition: min-height var(--drawer-transition);
+  }
+}
+
+/* ==============================================================
+ * 8. 响应式 Tab 导航（手机端）
+ * ============================================================== */
+@media (max-width: 639px) {
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 56px;
+    background: rgba(11, 18, 32, 0.98);
+    border-top: 1px solid var(--color-border);
+    padding-bottom: var(--safe-bottom);
+    flex-shrink: 0;
+    z-index: 40;
+  }
+
+  .mobile-bottom-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 12px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 10px;
+    cursor: pointer;
+    min-height: var(--touch-target-min-mobile);
+    min-width: var(--touch-target-min-mobile);
+    transition: color 0.2s;
+  }
+
+  .mobile-bottom-nav .nav-item.active {
+    color: #22d3ee;
+  }
+
+  .mobile-bottom-nav .nav-item .nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* 桌面/平板隐藏底部导航 */
+@media (min-width: 640px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* ==============================================================
+ * 9. 撤销/重做按钮在手机上的折叠
+ * ============================================================== */
+@media (max-width: 639px) {
+  .undo-redo-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .undo-redo-bar button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    border: 0.5px solid var(--color-border);
+    cursor: pointer;
+    min-height: 40px;
+  }
+
+  .undo-redo-bar button:disabled {
+    opacity: 0.3;
+  }
+}
+
+/* ==============================================================
+ * 10. 折叠面板（Collapse）在平板/手机的默认状态
+ * ============================================================== */
+@media (max-width: 1023px) {
+  /* 平板/手机上折叠面板默认闭合（除第一组外） */
+  .collapse-section:not(.collapse-keep-open) {
+    --collapse-initial-open: false;
+  }
+
+  .collapse-section.collapse-keep-open {
+    --collapse-initial-open: true;
+  }
+}
+
+/* ==============================================================
+ * 11. 横向滑动批量切换（手机端）
+ * ============================================================== */
+@media (max-width: 639px) {
+  .batch-swipe-area {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    gap: 0;
+  }
+
+  .batch-swipe-area .batch-slide {
+    scroll-snap-align: start;
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+
+  /* 隐藏滚动条但保留滚动功能 */
+  .batch-swipe-area::-webkit-scrollbar {
+    display: none;
+  }
+
+  .batch-swipe-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0;
+  }
+
+  .batch-swipe-indicator .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transition: background 0.2s, width 0.2s;
+  }
+
+  .batch-swipe-indicator .dot.active {
+    width: 20px;
+    border-radius: 3px;
+    background: #22d3ee;
+  }
+}
+
+/* ==============================================================
+ * 12. 平板横向布局特殊处理（横向时参数面板展开）
+ * ============================================================== */
+@media (min-width: 640px) and (max-width: 1023px) and (orientation: landscape) {
+  .editor-body {
+    grid-template-columns: 1fr 380px;
+  }
+
+  .editor-body.xiaomi-layout {
+    grid-template-columns: 1fr 320px;
+  }
+
+  .editor-control-panel {
+    padding: 20px;
+  }
+}
+
+/* ==============================================================
+ * 13. 过渡动画
+ * ============================================================== */
+.editor-preview-area,
+.editor-control-panel,
+.drawer-surface {
+  transition: all var(--drawer-transition);
+}
+
+/* ==============================================================
+ * 14. 打印样式（桌面端导出设计稿时）
+ * ============================================================== */
+@media print {
+  .editor-control-panel,
+  .mobile-params-drawer,
+  .mobile-bottom-nav,
+  .mobile-export-fab {
+    display: none !important;
+  }
+
+  .editor-body {
+    grid-template-columns: 1fr !important;
+  }
+}

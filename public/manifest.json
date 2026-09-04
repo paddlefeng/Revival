@@ -1,0 +1,20 @@
+{
+  "name": "Revival - 照片美化工作室",
+  "short_name": "Revival",
+  "description": "照片美化工具 - 为您的照片添加精美边框和水印",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["photography", "utilities"],
+  "lang": "zh-CN"
+}

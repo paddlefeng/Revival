@@ -1,0 +1,54 @@
+sequenceDiagram
+    participant User as 用户
+    participant OS as 操作系统
+    participant Electron as Electron Main
+    participant Preload as preload.cjs
+    participant React as React 渲染进程
+    participant Platform as platform.ts
+    participant Layout as ResponsiveLayout
+    participant MobileUI as MobileDrawer
+
+    User->>OS: 启动应用 (双击图标 / 双击关联文件)
+    OS->>Electron: app.whenReady()
+    
+    alt 启动参数包含文件路径 (文件关联)
+        Electron->>Electron: 解析 process.argv 获取图片路径
+    end
+
+    Electron->>Electron: createWindow()
+    Electron->>Preload: 加载 preload.cjs
+    Preload->>Preload: contextBridge.exposeInMainWorld('electronAPI', ...)
+    Electron->>React: 加载 dist/index.html
+
+    React->>Platform: detectPlatform()
+    Platform-->>React: 'electron' | 'android' | 'web'
+
+    alt 文件关联启动
+        Electron->>React: IPC 'files-opened' 发送文件路径
+        React->>React: 自动导航到编辑器并加载图片
+    end
+
+    React->>React: useResponsive() 检测窗口尺寸
+    React->>Layout: 渲染 ResponsiveLayout
+
+    alt breakpoint === 'desktop' (>=1024px)
+        Layout->>Layout: 渲染 grid: 1fr 400px 布局
+    else breakpoint === 'tablet' (640-1023px)
+        Layout->>Layout: 渲染 grid: 1fr 320px 布局
+    else breakpoint === 'mobile' (<640px)
+        Layout->>Layout: 渲染全屏预览 + FAB
+        User->>Layout: 点击「参数调节」按钮
+        Layout->>MobileUI: setDrawerOpen(true)
+        MobileUI->>MobileUI: 展示底部抽屉 (60-80vh)
+        User->>MobileUI: 拖拽手柄调节高度
+        MobileUI->>MobileUI: handlePointerMove() 更新高度
+        User->>MobileUI: 拖拽超过阈值 30px
+        MobileUI->>Layout: onOpenChange(true/false)
+    end
+
+    alt Electron 原生菜单导航
+        User->>Electron: 点击菜单「模板 → 光影边框」
+        Electron->>React: IPC 'navigate' -> '/editor'
+        React->>React: window.location.hash = '#/editor'
+        React->>Layout: 重新渲染编辑器页
+    end

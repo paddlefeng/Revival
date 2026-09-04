@@ -1,0 +1,239 @@
+classDiagram
+
+    %% ===== 平台抽象层 =====
+    class PlatformUtil {
+        <<static>>
+        +detectPlatform() RevivalPlatform
+        +isElectron() boolean
+        +isMobile() boolean
+        +isAndroid() boolean
+        +isTouchDevice() boolean
+    }
+    <<interface>> RevivalPlatform
+    RevivalPlatform : electron
+    RevivalPlatform : android
+    RevivalPlatform : ios
+    RevivalPlatform : web
+
+    class ResponsiveInfo {
+        +breakpoint Breakpoint
+        +platform RevivalPlatform
+        +isTouch boolean
+        +isMobile boolean
+        +isTablet boolean
+        +isDesktop boolean
+        +width number
+        +height number
+        +orientation "portrait" | "landscape"
+    }
+    <<interface>> ResponsiveInfo
+
+    class Breakpoint {
+        <<enum>>
+        mobile
+        tablet
+        desktop
+    }
+
+    %% ===== 跨平台存储 =====
+    class StorageService {
+        <<interface>>
+        +get(key string) Promise~T|null~
+        +set(key string, value T) Promise~void~
+        +remove(key string) Promise~void~
+        +clear() Promise~void~
+    }
+    class ElectronStorage {
+        +get(key string) Promise~T|null~
+        +set(key string, value T) Promise~void~
+        +remove(key string) Promise~void~
+        +clear() Promise~void~
+    }
+    class CapacitorStorage {
+        +get(key string) Promise~T|null~
+        +set(key string, value T) Promise~void~
+        +remove(key string) Promise~void~
+        +clear() Promise~void~
+    }
+    class WebStorage {
+        +get(key string) Promise~T|null~
+        +set(key string, value T) Promise~void~
+        +remove(key string) Promise~void~
+        +clear() Promise~void~
+    }
+    StorageService <|.. ElectronStorage
+    StorageService <|.. CapacitorStorage
+    StorageService <|.. WebStorage
+
+    %% ===== Electron IPC Bridge =====
+    class ElectronAPI {
+        <<interface>>
+        +minimize() void
+        +maximize() void
+        +close() void
+        +isMaximized() Promise~boolean~
+        +onWindowStateChanged(callback) void
+        +showOpenDialog(options) Promise~DialogResult~
+        +showSaveDialog(options) Promise~DialogResult~
+        +processImage(operation, inputPath, options) Promise~ImageProcessResult~
+        +setProgressBar(progress number) void
+        +clearProgressBar() void
+        +getAppVersion() Promise~string~
+        +getAppPath() Promise~string~
+        +onNavigate(callback) void
+        +onFilesOpened(callback) void
+        +onExportImage(callback) void
+        +onBatchExport(callback) void
+        +onOpenSettings(callback) void
+        +onUpdateChecking(callback) void
+        +onUpdateAvailable(callback) void
+        +onUpdateNotAvailable(callback) void
+        +onUpdateProgress(callback) void
+        +onUpdateDownloaded(callback) void
+    }
+
+    class DialogResult {
+        +canceled boolean
+        +filePaths string[]
+    }
+    class ImageProcessResult {
+        +data string   "Base64 encoded"
+        +mimeType string
+    }
+
+    %% ===== 响应式组件 =====
+    class ResponsiveLayoutProps {
+        +template string?
+        +widePanel boolean?
+        +preview ReactNode
+        +controls ReactNode
+        +drawerTitle string?
+        +drawerActionLabel string?
+        +onDrawerAction () => void?
+        +fab ReactNode?
+    }
+    class ResponsiveLayout {
+        +props ResponsiveLayoutProps
+        +render() ReactNode
+    }
+    class MobileDrawerProps {
+        +open boolean
+        +onOpenChange (open boolean) => void
+        +title string
+        +actionLabel string?
+        +onAction () => void?
+        +children ReactNode
+    }
+    class MobileDrawer {
+        +props MobileDrawerProps
+        +render() ReactNode
+    }
+
+    %% ===== 文件上传 =====
+    class MediaUploadResult {
+        +files MediaFile[]
+        +isVideo boolean
+    }
+    class MediaFile {
+        +name string
+        +dataUrl string
+        +file File
+    }
+    class UsePlatformUploadOptions {
+        +onUpload (result MediaUploadResult) => void
+        +acceptVideo boolean?
+        +multiple boolean?
+    }
+    class UsePlatformUploadReturn {
+        +triggerUpload () => void
+        +handleFileChange (e) => void
+        +renderFileInput () => JSX.Element
+        +isMobile boolean
+        +isTouch boolean
+    }
+
+    %% ===== Sharp 处理 =====
+    class SharpOperation {
+        <<enum>>
+        resize
+        convert
+        metadata
+        compress
+        thumbnail
+    }
+    class SharpProcessOptions {
+        +operation SharpOperation
+        +inputPath string
+        +options Record~string, any~?
+    }
+
+    %% ===== 自动更新 =====
+    class UpdateInfo {
+        +version string
+        +releaseDate string?
+        +releaseNotes string?
+    }
+    class UpdateProgress {
+        +percent number
+        +bytesPerSecond number
+        +total number
+        +transferred number
+    }
+
+    %% ===== 任务栏进度 =====
+    class TaskbarProgress {
+        <<hook>>
+        +setProgress(progress number) void
+        +clearProgress() void
+        +isSupported boolean
+    }
+
+    %% ===== EXIF =====
+    class ExifData {
+        +Make string?        "相机厂商"
+        +Model string?       "相机型号"
+        +FNumber number?     "光圈"
+        +ExposureTime string? "快门"
+        +ISO number?         "感光度"
+        +FocalLength number? "焦距"
+        +DateTimeOriginal string? "拍摄时间"
+        +LensModel string?   "镜头型号"
+    }
+
+    %% ===== 页面组件 =====
+    class EditorPageBase {
+        <<abstract>>
+        #templateType string
+        #exifData ExifData?
+        +render() ReactNode
+    }
+    class EditorPage
+    class HasselbladPage
+    class XiaomiPage
+    class CardParamsPage
+    class TemplateSelectPage
+    class LoadingPage
+
+    %% ===== 关系 =====
+    ResponsiveLayout *-- ResponsiveLayoutProps : contains
+    ResponsiveLayout --> MobileDrawer : uses (mobile)
+    MobileDrawer *-- MobileDrawerProps : contains
+
+    UsePlatformUploadReturn <.. UsePlatformUploadOptions : configured by
+    UsePlatformUploadReturn --> MediaUploadResult : produces
+
+    SharpProcessOptions --> SharpOperation : uses enum
+
+    ElectronAPI --> DialogResult : returns
+    ElectronAPI --> ImageProcessResult : returns
+    ElectronAPI ..> UpdateInfo : callback payload
+    ElectronAPI ..> UpdateProgress : callback payload
+
+    EditorPageBase --> ExifData : reads
+    EditorPageBase --> ResponsiveLayout : renders
+    EditorPageBase --> TaskbarProgress : uses
+
+    EditorPage --|> EditorPageBase : extends
+    HasselbladPage --|> EditorPageBase : extends
+    XiaomiPage --|> EditorPageBase : extends
+    CardParamsPage --|> EditorPageBase : extends
